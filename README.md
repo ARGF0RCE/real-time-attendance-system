@@ -1,2 +1,2 @@
-# real-time-attettendance-system
+# real-time-attendance-system
 A real time Attendance System
