@@ -1,4 +1,7 @@
-tensorflow==2.6.0
-opencv-python==4.5.3.56
-mtcnn==0.1.0
-scikit-learn==0.24.2
+tensorflow==2.10.*
+scikit-learn==0.23.*
+opencv-python==4.4.*
+flask==1.1.*
+flask_sqlalchemy==2.4.*
+pyscopg2-binary==2.8.*
+mtcnn==0.1.1

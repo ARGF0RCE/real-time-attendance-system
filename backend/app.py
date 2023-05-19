@@ -9,14 +9,16 @@ from model import *
 from flask import current_app
 import os
 from werkzeug.utils import secure_filename
-from sshtunnel import SSHTunnelForwarder
+# from sshtunnel import SSHTunnelForwarder
 import base64
+import numpy as np
 
-# SSH tunnel configuration
-SSH_USERNAME = 'postgres'
-SSH_PASSWORD = '1235Eight13Fib.!@#'
-SSH_HOST = '172-105-50-204.ip.linodeusercontent.com'
-SSH_PORT = 22
+
+# # SSH tunnel configuration
+# SSH_USERNAME = 'postgres'
+# SSH_PASSWORD = '1235Eight13Fib.!@#'
+# SSH_HOST = '172-105-50-204.ip.linodeusercontent.com'
+# SSH_PORT = 22
 
 # PostgreSQL configuration
 DB_USERNAME = 'postgres'
@@ -24,21 +26,21 @@ DB_PASSWORD = 'pwd'
 DB_NAME = 'attendance_db'
 DB_PORT = 5432
 
-# Set up an SSH tunnel
-server = SSHTunnelForwarder(
-    (SSH_HOST, SSH_PORT),
-    ssh_username=SSH_USERNAME,
-    ssh_password=SSH_PASSWORD,
-    remote_bind_address=('localhost', DB_PORT),
-    local_bind_address=('localhost', 0)  # Automatically assign a free local port
-)
+# # Set up an SSH tunnel
+# server = SSHTunnelForwarder(
+#     (SSH_HOST, SSH_PORT),
+#     ssh_username=SSH_USERNAME,
+#     ssh_password=SSH_PASSWORD,
+#     remote_bind_address=('localhost', DB_PORT),
+#     local_bind_address=('localhost', 0)  # Automatically assign a free local port
+# )
 
-# Start the SSH tunnel
-server.start()
+# # Start the SSH tunnel
+# server.start()
 
-# Update the database URI to use the SSH tunnel
+# # Update the database URI to use the SSH tunnel
 
-print(f"Binded Local port: {server.local_bind_port}")
+# print(f"Binded Local port: {server.local_bind_port}")
 # Define the allowed extensions for uploaded images
 ALLOWED_EXTENSIONS = {'jpg'}
 
@@ -47,7 +49,7 @@ def allowed_file(filename):
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{DB_USERNAME}:{DB_PASSWORD}@localhost:{server.local_bind_port}/{DB_NAME}'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{DB_USERNAME}:{DB_PASSWORD}@localhost:{DB_PORT}/{DB_NAME}'
 db = SQLAlchemy(app)
 
 class Attendance(db.Model):
@@ -55,21 +57,6 @@ class Attendance(db.Model):
     date = db.Column(db.Date, nullable=False)
     student_name = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(10), nullable=False)
-
-def capture_snapshot(key):
-    cap = cv2.VideoCapture(0)
-
-    while True:
-        ret, frame = cap.read()
-        cv2.imshow('Press {} to capture snapshot'.format(key), frame)
-
-        if cv2.waitKey(1) & 0xFF == ord(key):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-    return frame
 
 @app.route('/')
 def index():
@@ -97,9 +84,16 @@ def add_student():
 @app.route('/mark_attendance', methods=['POST'])
 def mark_attendance():
     date_of_attendance = datetime.date.today().strftime('%Y-%m-%d')
-    image_data = capture_snapshot('s')
-    img = np.array(image_data, dtype=np.uint8)
-    img = preprocess(img)
+    
+    # Get the base64 image string from the request
+    image_data = request.form['image_data']
+    # Remove the header of the base64 string
+    header, base64_image_data = image_data.split(',', 1)
+    decoded_image = base64.b64decode(base64_image_data)
+
+    # Convert the base64 string to an OpenCV image
+    nparr = np.frombuffer(decoded_image, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     # Recognize faces in the image
     recognized_students = recognize(img)
@@ -127,12 +121,18 @@ def get_attendance():
     attendance_list = [{'date': entry.date, 'student_name': entry.student_name, 'status': entry.status} for entry in attendance_data]
 
     return jsonify(attendance_list)
+@app.route('/clear_attendance', methods=['POST'])
+def clear_attendance():
+    try:
+        # Delete all attendance records
+        Attendance.query.delete()
+        db.session.commit()
+        return jsonify({'result': 'success'})
+    except Exception as e:
+        print(e)
+        return jsonify({'result': 'error'})
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    try:
-        app.run(debug=True)
-    finally:
-        # Close the SSH tunnel when the app stops
-        server.stop()
+    app.run(debug=True)

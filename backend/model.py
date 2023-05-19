@@ -11,7 +11,8 @@ with tf.device('/device:CPU:0'):
     from architecture import InceptionResNetV2
     from sklearn.neighbors import KNeighborsClassifier
 
-
+    knn = None
+    
     # Load the model
     model = InceptionResNetV2()
     model.load_weights('./backend/facenet_keras_weights_1.h5')
@@ -33,7 +34,8 @@ with tf.device('/device:CPU:0'):
         embedding = model.predict(face)
         return embedding[0]
 
-    def recognize(img):
+    # Function to train on the images of the three students
+    def train():
         # Load and preprocess the image of the three students
         students = os.listdir('./backend/images/')
         students_list = []
@@ -52,13 +54,23 @@ with tf.device('/device:CPU:0'):
             print(face.shape)
             embedding = get_embedding(model, face)
             embeddings.append(embedding)
-
-        # Train a k-NN classifier on the embeddings
+        return embeddings, students_list
+    
+    # Initialize the k-NN classifier
+    def init_knn_classifier():
+        global knn
+        embeddings, students_list = train()
         X_train = np.array(embeddings)
         y_train = np.array(students_list)
         knn = KNeighborsClassifier(n_neighbors=1)
         knn.fit(X_train, y_train)
 
+    # Call this function at the beginning to initialize the k-NN classifier
+    init_knn_classifier()
+    
+    def recognize(img):
+        # Detect faces in the input image
+        global knn
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         faces = detector.detect_faces(img)
         predictions = []
@@ -70,3 +82,35 @@ with tf.device('/device:CPU:0'):
             pred = knn.predict(embedding)[0]
             predictions.append(pred)
         return predictions
+    
+
+    def recognize_test(img):
+        # Detect faces in the input image
+        faces = detector.detect_faces(img)
+
+        # Train the model with the images of the three students
+        embeddings, students_list = train()
+
+        # Train a k-NN classifier on the embeddings
+        X_train = np.array(embeddings)
+        y_train = np.array(students_list)
+        knn = KNeighborsClassifier(n_neighbors=1)
+        knn.fit(X_train, y_train)
+        # Iterate over the detected faces
+        for face in faces:
+            x, y, w, h = face['box']
+            cropped_face = img[y:y+h, x:x+w]
+
+            # Compute the embedding for the face
+            face_embedding = get_embedding(model, cropped_face)
+
+            # Predict the label of the face using the k-NN classifier
+            student_label = knn.predict(face_embedding.reshape(1, -1))[0]
+
+            # Draw a bounding box around the face
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+            # Write the student's name below the bounding box
+            cv2.putText(img, student_label, (x, y+h+20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+        return img

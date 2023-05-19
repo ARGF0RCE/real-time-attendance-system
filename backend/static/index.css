@@ -1,0 +1,145 @@
+
+body {
+    background-color: #1d1f27;
+    font-family: 'Roboto', sans-serif;
+    color: #fff;
+    overflow-x: hidden;
+}
+h1 {
+    text-align: center;
+    margin-top: 80px;
+    font-size: 60px;
+    letter-spacing: 2px;
+    text-shadow: 3px 3px #00c7b7;
+}
+.form-container {
+    flex-direction: column;
+    border: 2px solid #00c7b7;
+    background-color: #2d2f3a;
+    padding-left: 20px;
+    margin: 20px;
+    border-radius: 10px;
+    box-shadow: 5px 5px 10px #00c7b7;
+    animation: fade-in 2s ease-out;
+}
+
+#camera_frame
+{
+    padding-left: 23rem;
+}
+
+input[type=text]:focus, input[type=file]:focus, button:focus {
+    outline: none;
+}
+
+
+input[type=text], input[type=file], button {
+    display: block;
+    margin: 21px -12px;
+    padding: 10px 0px;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 2px 2px #00c7b7;
+    font-size: 16px;
+    width: 100%;
+    color: #fff;
+    background-color: #4c4f5a;
+    transition: background-color 0.2s ease-out;
+}
+input[type=file]::-webkit-file-upload-button {
+    background-color: #00c7b7;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 2px 2px #00c7b7;
+    transition: background-color 0.2s ease-out;
+}
+input[type=file]::-webkit-file-upload-button:hover {
+    background-color: #fff;
+    color: #00c7b7;
+    box-shadow: 2px 2px #00c7b7;
+}
+button[type=submit], #mark-attendance, #fetch-attendance {
+    background-color: #00c7b7;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease-out;
+}
+button[type=submit]:hover, #mark-attendance:hover, #fetch-attendance:hover {
+    background-color: #fff;
+    color: #00c7b7;
+    box-shadow: 2px 2px #00c7b7;
+}
+.mark_button:hover
+{
+    background-color: #fff;
+    color: #00c7b7;
+    box-shadow: 2px 2px #00c7b7;  
+}
+table {
+    border-collapse: collapse;
+    margin: 20px;
+    width: 100%;
+}
+th, td {
+    border: 1px solid #00c7b7;
+    padding: 10px;
+    text-align: center;
+}
+th {
+    background-color: #00c7b7;
+    color: #fff;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+tbody tr:nth-child(even) {
+    background-color: #4c4f5a;
+}
+tbody tr:hover {
+    background-color: #00c7;
+}
+
+th
+{
+    padding-left:20px;
+    margin-left:20px;
+}
+
+/* Media queries */
+/* @media screen and (max-width: 600px) {
+    h1 {
+        font-size: 36px;
+        margin-top: 40px;
+    }
+} */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 40px;
+    }
+    .form-container {
+        margin: 10px;
+    }
+    input[type=text], input[type=file], button {
+        font-size: 14px;
+    }
+    table {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 576px) {
+    h1 {
+        font-size: 30px;
+    }
+    .form-container {
+        padding: 10px;
+        margin: 10px;
+    }
+    input[type=text], input[type=file], button {
+        font-size: 12px;
+    }
+    table {
+        font-size: 12px;
+    }
+}

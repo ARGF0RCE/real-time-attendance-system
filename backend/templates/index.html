@@ -4,28 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance System</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: auto;
-        }
-        .form-container {
-            margin-bottom: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
+    <link rel="stylesheet" href="../static/index.css">
 </head>
 <body>
     <h1>Attendance System</h1>
@@ -43,7 +22,8 @@
 
     <div class="form-container">
         <h2>Mark Attendance</h2>
-        <button id="mark-attendance">Mark Attendance</button>
+        <button id="mark-attendance" onclick="markAttendance()">Mark Attendance</button>
+        
     </div>
 
     <div class="form-container">
@@ -61,8 +41,26 @@
             </tbody>
         </table>
     </div>
-
+    <div class="form-container">
+        <h2>Erase Attendance Records</h2>
+        <button type="submit", id="clear-table">Erase Attendance Records</button>
+    </div>
+    <div id ="camera_frame" class="form-container">
+        <h2>Camera</h2>
+        <video  autoplay="true" id="videoElement"></video>
+    </div>
     <script>
+        async function clearTable() {
+            const response = await fetch("/clear_attendance", { method: "POST" });
+            const data = await response.json();
+
+            if (data.result === "success") {
+                alert("Attendance table has been cleared.");
+            } else {
+                alert("Failed to clear the attendance table.");
+            }
+        }
+
         document.getElementById('add-student-form').addEventListener('submit', function(event) {
             event.preventDefault();
 
@@ -86,22 +84,58 @@
             });
         });
 
+        async function setupCamera() {
+            const video = document.querySelector("#videoElement");
+            
+            if (navigator.mediaDevices.getUserMedia) {
+                try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                } catch (error) {
+                console.error("Error: Unable to access the camera.", error);
+                }
+            } else {
+                console.error("Error: getUserMedia not supported.");
+            }
+        }
+        window.addEventListener('load', (event) => {
+            setupCamera();
+        });
 
-        document.getElementById('mark-attendance').addEventListener('click', function() {
+        async function captureImage() {
+            return new Promise((resolve) => {
+                const video = document.getElementById('videoElement');
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = video.videoWidth;
+                tempCanvas.height = video.videoHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(video, 0, 0);
+                const dataURL = tempCanvas.toDataURL('image/jpeg');
+                resolve(dataURL);
+            });
+        }
+
+        async function markAttendance() {
+            const imageDataURL = await captureImage();
+
+            // Create a FormData object and append the image data
+            const formData = new FormData();
+            formData.append('image_data', imageDataURL);
+
             fetch('/mark_attendance', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(response => response.json())
-              .then(data => { 
-                if (data.result === 'success') {
-                      alert('Attendance marked successfully');
-                  } else {
-                      alert('Error marking attendance');
-                  }
-              });
-        });
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                console.log(data);
+                })
+                .catch((error) => {
+                console.error('Error:', error);
+                });
+        }
+
+        document.getElementById("clear-table").addEventListener("click", clearTable);
 
         document.getElementById('fetch-attendance').addEventListener('click', function() {
             fetch('/get_attendance')
